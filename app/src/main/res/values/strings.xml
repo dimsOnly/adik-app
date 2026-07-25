@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Adik App</string>
+    <string name="notif_channel_deadline">Pengingat Deadline Tugas</string>
+    <string name="notif_channel_deadline_desc">Notifikasi H-2 sebelum deadline tugas kuliah</string>
+</resources>
