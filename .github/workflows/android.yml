@@ -17,108 +17,124 @@ permissions:
   contents: write
 
 jobs:
-  android:
+  build:
 
     runs-on: ubuntu-latest
 
+    timeout-minutes: 30
+
     steps:
 
-      # ==========================================
-      # 1. Checkout source code
-      # ==========================================
-      - name: Checkout repository
+      # ==============================
+      # Checkout Repository
+      # ==============================
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ==========================================
-      # 2. Setup JDK 17
-      # ==========================================
-      - name: Set up JDK 17
+      # ==============================
+      # Setup Java 17
+      # ==============================
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
           cache: gradle
 
-      # ==========================================
-      # 3. Setup Gradle
-      # ==========================================
+      # ==============================
+      # Setup Gradle
+      # ==============================
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # ==========================================
-      # 4. Give Gradle Wrapper permission
-      # ==========================================
-      - name: Grant execute permission for gradlew
+      # ==============================
+      # Permission
+      # ==============================
+      - name: Grant Execute Permission
         run: chmod +x gradlew
 
-      # ==========================================
-      # 5. Check Gradle installation
-      # ==========================================
-      - name: Check Gradle version
-        run: ./gradlew --version
+      # ==============================
+      # Show Environment
+      # ==============================
+      - name: Environment
+        run: |
+          java -version
+          ./gradlew --version
 
-      # ==========================================
-      # 6. Run unit tests
-      # ==========================================
-      - name: Run unit tests
+      # ==============================
+      # Clean Project
+      # ==============================
+      - name: Clean Project
+        run: ./gradlew clean
+
+      # ==============================
+      # Unit Test
+      # ==============================
+      - name: Run Unit Test
         run: ./gradlew testDebugUnitTest --stacktrace
 
-      # ==========================================
-      # 7. Build Debug APK
-      # ==========================================
+      # ==============================
+      # Build Debug APK
+      # ==============================
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      # ==========================================
-      # 8. Upload Debug APK as Artifact
-      # ==========================================
+      # ==============================
+      # Upload Debug APK
+      # ==============================
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: AdikApp-debug-apk
+          name: AdikApp-Debug
           path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
           retention-days: 30
 
-      # ==========================================
-      # 9. Build Release APK
-      # ==========================================
+      # ==============================
+      # Build Release APK
+      # ==============================
       - name: Build Release APK
         run: ./gradlew assembleRelease --stacktrace
 
-      # ==========================================
-      # 10. Upload Release APK as Artifact
-      # ==========================================
+      # ==============================
+      # Upload Release APK
+      # ==============================
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: AdikApp-release-apk
+          name: AdikApp-Release
           path: app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
           retention-days: 30
 
-      # ==========================================
-      # 11. Upload mapping/proguard files if exists
-      # ==========================================
-      - name: Upload Release Build Information
+      # ==============================
+      # Upload Mapping (Optional)
+      # ==============================
+      - name: Upload Mapping
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: AdikApp-release-build-info
-          path: |
-            app/build/outputs/mapping/release/**
-            app/build/outputs/logs/**
+          name: Mapping
+          path: app/build/outputs/mapping
           if-no-files-found: ignore
-          retention-days: 30
 
-      # ==========================================
-      # 12. Create GitHub Release
-      # ==========================================
+      # ==============================
+      # Upload Test Report
+      # ==============================
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: UnitTestReport
+          path: app/build/reports/tests
+          if-no-files-found: ignore
+
+      # ==============================
+      # GitHub Release
+      # ==============================
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/apk/debug/*.apk
           generate_release_notes: true
-          fail_on_unmatched_files: false
+          files: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
